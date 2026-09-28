@@ -1,5 +1,10 @@
 # 🌸 Petal — Order Tracking & Live Support
 
+
+Live app: https://stunning-elf-b76551.netlify.app
+API: https://order-tracker-0o4g.onrender.com
+
+
 One full-stack app showing four communication protocols side by side.
 
 | Protocol | Where | Used for |
