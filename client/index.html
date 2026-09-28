@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Petal — Order Tracking & Live Support</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--bg:#f4f1fc;--card:#fff;--ink:#2a2444;--mute:#8a84a3;--line:#e8e3f6;--vio:#7c5cfc;--vio2:#efe9ff;--mint:#37b992;--rose:#f26b8a}
+@media(prefers-color-scheme:dark){:root{--bg:#171326;--card:#211b38;--ink:#f1eeff;--mute:#9d97bb;--line:#31294f;--vio2:#2e2560}}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+button{font:inherit;cursor:pointer;border:0}button:focus-visible,input:focus-visible{outline:3px solid var(--vio);outline-offset:2px}
+header{display:flex;align-items:center;gap:16px;padding:18px 28px;flex-wrap:wrap}
+h1{font-size:26px;font-weight:800;margin:0;letter-spacing:-.5px}h1 small{display:block;font-size:13px;color:var(--mute);font-weight:500;letter-spacing:0}
+.seg{margin-left:auto;display:flex;background:var(--card);border-radius:99px;padding:4px;border:1px solid var(--line)}
+.seg button{background:none;color:var(--mute);padding:8px 18px;border-radius:99px;font-weight:600}.seg .on{background:var(--vio);color:#fff}
+.live{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)}.dot{width:9px;height:9px;border-radius:50%;background:var(--rose)}.dot.ok{background:var(--mint);box-shadow:0 0 0 4px #37b99233}
+main{display:grid;grid-template-columns:300px 1fr 360px;gap:18px;padding:0 28px 28px;height:calc(100% - 100px);min-height:560px}
+@media(max-width:1000px){main{grid-template-columns:1fr;height:auto}.panel{max-height:520px}}
+.panel{background:var(--card);border-radius:24px;padding:20px;border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;box-shadow:0 10px 30px #7c5cfc14}
+.panel h2{font-size:16px;margin:0 0 14px;font-weight:800}.scroll{overflow:auto;flex:1;min-height:0}
+.item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;background:var(--bg);margin-bottom:8px}
+.item .e{font-size:26px}.item b{display:block;font-size:14px}.item span{font-size:13px;color:var(--mute)}
+.item button{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--vio);color:#fff;font-size:18px}
+.cart{border-top:1px dashed var(--line);padding-top:12px;margin-top:6px;font-size:14px}
+input{font:inherit;width:100%;padding:11px 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:8px}
+.cta{width:100%;padding:12px;border-radius:14px;background:var(--vio);color:#fff;font-weight:700}.cta:disabled{opacity:.4;cursor:not-allowed}
+.order{padding:16px;border-radius:18px;border:2px solid var(--line);margin-bottom:12px;cursor:pointer;transition:border-color .2s}
+.order.sel{border-color:var(--vio);background:var(--vio2)}
+.oh{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--vio2);color:var(--vio)}
+.pill.delivered{background:#37b99222;color:var(--mint)}.pill.cancelled{background:#f26b8a22;color:var(--rose)}
+.meta{font-size:13px;color:var(--mute);margin:4px 0 12px}
+.steps{display:flex;gap:4px}.steps i{flex:1;height:6px;border-radius:9px;background:var(--line)}.steps i.f{background:var(--vio)}.steps.x i{background:#f26b8a55}
+.acts{display:flex;gap:8px;margin-top:12px}.acts button{padding:8px 14px;border-radius:12px;font-weight:600;font-size:13px}
+.b1{background:var(--mint);color:#fff}.b2{background:#f26b8a22;color:var(--rose)}
+.msgs{display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.m{max-width:82%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.4;background:var(--bg)}
+.m.me{align-self:flex-end;background:var(--vio);color:#fff;border-bottom-right-radius:6px}.m:not(.me){border-bottom-left-radius:6px}
+.m small{display:block;font-size:11px;opacity:.7;margin-bottom:2px}.sys{align-self:center;font-size:12px;color:var(--mute)}
+.send{display:flex;gap:8px;margin-top:6px}.send input{margin:0}.send button{padding:0 18px;border-radius:14px;background:var(--vio);color:#fff;font-weight:700}.send button:disabled{opacity:.4}
+.empty{color:var(--mute);font-size:14px;text-align:center;margin:auto;padding:20px}
+#toasts{position:fixed;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:9;max-width:320px}
+.toast{background:var(--card);border-left:5px solid var(--vio);border-radius:14px;padding:12px 16px;font-size:13px;box-shadow:0 10px 30px #2a244433;animation:in .3s}
+.toast.warn{border-color:var(--rose)}@keyframes in{from{transform:translateX(30px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.toast{animation:none}}
+</style></head><body>
+<header>
+  <h1>🌸 Petal<small>Track your order. Chat with a real person.</small></h1>
+  <div class="live"><span class="dot" id="dot"></span><span id="conn">Connecting…</span></div>
+  <div class="seg"><button id="rc" class="on">Customer</button><button id="ra">Support agent</button></div>
+</header>
+<main>
+  <section class="panel" id="left"></section>
+  <section class="panel"><h2 id="otitle">Your orders</h2><div class="scroll" id="orders"></div></section>
+  <section class="panel"><h2 id="ctitle">Live chat</h2><div class="scroll" id="msgs"></div>
+    <div class="sys" id="typing" style="min-height:18px"></div>
+    <div class="send"><input id="txt" placeholder="Select an order to chat…" disabled aria-label="Message"><button id="sendBtn" disabled>Send</button></div></section>
+</main>
+<div id="toasts" aria-live="polite"></div>
+<script>
+const API = window.API_URL, $ = id => document.getElementById(id);
+const STEPS = ['placed','packed','shipped','out_for_delivery','delivered'];
+let role = 'customer', catalog = [], orders = [], cart = {}, active = null, name = 'Guest';
+const store = { get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}} };
+let myIds = store.get('myIds') || [];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const label = s => s.replace(/_/g,' ');
+const rpc = (method, params) => fetch(API+'/rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:Date.now(),method,params})}).then(r=>r.json());
+
+// WebSocket (Socket.io)
+const socket = io(API);
+socket.on('connect', () => { $('dot').classList.add('ok'); $('conn').textContent = 'Live'; if (role==='agent') socket.emit('agent:join'); if (active) joinChat(active); });
+socket.on('disconnect', () => { $('dot').classList.remove('ok'); $('conn').textContent = 'Reconnecting…'; });
+socket.on('order:status', o => { const i = orders.findIndex(x=>x.id===o.id); if (i>=0) orders[i]=o; renderOrders(); });
+socket.on('order:new', o => { if (role==='agent') { orders.unshift(o); renderOrders(); } });
+socket.on('chat:history', ({orderId,messages}) => { if (orderId===active) { $('msgs').innerHTML='<div class="msgs" id="ml"></div>'; messages.forEach(addMsg); } });
+socket.on('chat:message', m => { if (m.orderId===active) addMsg(m); });
+socket.on('chat:presence', p => { if (p.orderId===active) addSys(p.text); });
+socket.on('chat:notify', n => { if (role==='agent') toast(`💬 New message on order #${n.orderId}`); });
+socket.on('chat:typing', t => { if (t.orderId===active) $('typing').textContent = t.typing ? `${t.role} is typing…` : ''; });
+
+// SSE
+const es = new EventSource(API+'/events');
+es.addEventListener('alert', e => { const a = JSON.parse(e.data); toast(a.message, a.level); });
+function toast(msg, level='info'){ const t=document.createElement('div'); t.className='toast '+level; t.textContent=msg; $('toasts').appendChild(t); setTimeout(()=>t.remove(),5000); }
+
+function renderLeft(){
+  if (role==='agent') { $('left').innerHTML = `<h2>Support desk</h2><p class="empty">Every customer order appears here in real time. Pick one to advance its status or reply in chat.</p>`; return; }
+  const lines = Object.entries(cart).filter(([,q])=>q>0);
+  const total = lines.reduce((s,[id,q])=>s+catalog.find(c=>c.id==id).price*q,0);
+  const keep = $('nm') ? $('nm').value : (name==='Guest'?'':name);
+  $('left').innerHTML = `<h2>Catalog</h2><div class="scroll">${catalog.map(c=>`<div class="item"><span class="e">${c.emoji}</span><div><b>${c.name}</b><span>$${c.price}</span></div><button data-add="${c.id}" aria-label="Add ${c.name}">+</button></div>`).join('')}</div>
+  <div class="cart">${lines.length?lines.map(([id,q])=>`${q} × ${catalog.find(c=>c.id==id).name}`).join('<br>')+`<br><b>Total $${total}</b>`:'Your cart is empty'}</div>
+  <input id="nm" placeholder="Your name" value="${esc(keep)}" style="margin-top:10px"><button class="cta" id="place" ${lines.length?'':'disabled'}>Place order</button>`;
+  document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{cart[b.dataset.add]=(cart[b.dataset.add]||0)+1;renderLeft()});
+  $('place').onclick = placeOrder;
+}
+async function placeOrder(){
+  name = $('nm').value.trim() || 'Guest';
+  const items = Object.entries(cart).filter(([,q])=>q>0).map(([id,q])=>({productId:+id,qty:q}));
+  const r = await fetch(API+'/api/v1/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:name,items})});
+  const o = await r.json(); myIds.push(o.id); store.set('myIds',myIds); orders.unshift(o); cart={}; renderLeft(); renderOrders(); selectOrder(o.id);
+}
+function renderOrders(){
+  $('otitle').textContent = role==='agent' ? 'All orders' : 'Your orders';
+  if (!orders.length) { $('orders').innerHTML = `<p class="empty">${role==='agent'?'No orders yet.':'No orders yet. Add something from the catalog to get started.'}</p>`; return; }
+  $('orders').innerHTML = orders.map(o=>{
+    const i = STEPS.indexOf(o.status), x = o.status==='cancelled';
+    const canCancel = !['out_for_delivery','delivered','cancelled'].includes(o.status);
+    return `<div class="order ${o.id===active?'sel':''}" data-id="${o.id}">
+      <div class="oh"><span>Order #${o.id}</span><span class="pill ${o.status}">${label(o.status)}</span></div>
+      <div class="meta">${esc(o.customer)} · $${o.total} · ${o.items.map(l=>l.emoji+l.qty).join(' ')}</div>
+      <div class="steps ${x?'x':''}">${STEPS.map((s,n)=>`<i class="${!x&&n<=i?'f':''}"></i>`).join('')}</div>
+      <div class="acts">${role==='agent'&&i>=0&&i<4&&!x?`<button class="b1" data-adv="${o.id}">Advance status</button>`:''}${canCancel?`<button class="b2" data-can="${o.id}">Cancel order</button>`:''}</div></div>`}).join('');
+  document.querySelectorAll('.order').forEach(el=>el.onclick=()=>selectOrder(+el.dataset.id));
+  document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const r=await rpc('advanceOrder',{orderId:+b.dataset.adv});if(r.error)toast(r.error.message,'warn')});
+  document.querySelectorAll('[data-can]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const r=await rpc('cancelOrder',{orderId:+b.dataset.can});if(r.error)toast(r.error.message,'warn')});
+}
+function selectOrder(id){ active=id; renderOrders(); $('ctitle').textContent=`Chat · Order #${id}`; $('txt').disabled=$('sendBtn').disabled=false; $('txt').placeholder=role==='agent'?'Reply to customer…':'Ask our team anything…'; joinChat(id); }
+function joinChat(id){ socket.emit('chat:join',{orderId:id,role,name:role==='agent'?'Support':name}); }
+function addMsg(m){ const ml=$('ml'); const me=m.role===role; ml.insertAdjacentHTML('beforeend',`<div class="m ${me?'me':''}"><small>${me?'You':esc(m.name)}</small>${esc(m.text)}</div>`); $('msgs').scrollTop=1e9; }
+function addSys(t){ const ml=$('ml'); if(ml) ml.insertAdjacentHTML('beforeend',`<div class="sys">${esc(t)}</div>`); }
+function send(){ const t=$('txt').value.trim(); if(!t||!active) return; socket.emit('chat:message',{orderId:active,text:t}); socket.emit('chat:typing',{orderId:active,typing:false}); $('txt').value=''; }
+$('sendBtn').onclick=send; $('txt').onkeydown=e=>{if(e.key==='Enter')send()};
+let tt; $('txt').oninput=()=>{socket.emit('chat:typing',{orderId:active,typing:true});clearTimeout(tt);tt=setTimeout(()=>socket.emit('chat:typing',{orderId:active,typing:false}),1200)};
+
+async function load(){
+  active=null; $('msgs').innerHTML='<p class="empty">Select an order to start chatting.</p>'; $('ctitle').textContent='Live chat'; $('txt').disabled=$('sendBtn').disabled=true;
+  orders = await (await fetch(API+'/api/v1/orders'+(role==='customer'?'?ids='+(myIds.join(',')||0):''))).json();
+  renderLeft(); renderOrders();
+}
+function setRole(r){ role=r; $('rc').classList.toggle('on',r==='customer'); $('ra').classList.toggle('on',r==='agent'); if(r==='agent') socket.emit('agent:join'); load(); }
+$('rc').onclick=()=>setRole('customer'); $('ra').onclick=()=>setRole('agent');
+(async()=>{ catalog = await (await fetch(API+'/api/v1/catalog')).json(); await load(); })().catch(()=>toast('Cannot reach the server. Check API_URL in config.js','warn'));
+</script></body></html>

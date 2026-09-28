@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: petal-order-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: CLIENT_URL
+        value: "*"
