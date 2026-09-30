@@ -90,12 +90,6 @@ Error codes:
 | -32001 | Order not found |
 | -32002 | Action not allowed (for example, cancelling an order already out for delivery) |
 
-Example with curl:
-```bash
-curl -X POST https://order-tracker-0o4g.onrender.com/rpc \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"listMethods"}'
-```
 
 ## 4. Server-Sent Events (`GET /events`)
 
